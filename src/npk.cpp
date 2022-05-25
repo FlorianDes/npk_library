@@ -20,7 +20,7 @@ uint8_t NPK::getData(uint16_t *data, uint8_t node)
     data[0] = UINT16_MAX;
     data[1] = UINT16_MAX;
     data[2] = UINT16_MAX;
-    byte req[8] = {0x01, 0x03, 0x00, 0x1e, 0x00, 0x03, 0x00, 0x00};
+    byte req[8] = {node, 0x03, 0x00, 0x1e, 0x00, 0x03, 0x00, 0x00};
     uint16_t crc = calculateCRC(req, 6);
     req[6] = lowByte(crc);
     req[7] = highByte(crc);
@@ -33,7 +33,8 @@ uint8_t NPK::getData(uint16_t *data, uint8_t node)
 
     digitalWrite(_dere_pin, LOW);
     uint32_t timeout = millis() + WAIT_ANSWER;
-    while (npkSer.available() < FRAMESIZE)
+
+    while (npkSer.available() < FRAMESIZE + 1)
     {
         if (timeout < millis())
         {
@@ -41,7 +42,8 @@ uint8_t NPK::getData(uint16_t *data, uint8_t node)
             break;
         }
     }
-
+    npkSer.read();
+    Serial.printf("avail: %d\n", npkSer.available());
     if (error == ERROR_NONE)
     {
         byte resp[FRAMESIZE] = {255};
@@ -117,7 +119,7 @@ void NPK::flush(uint32_t flushtime)
     unsigned long _flushtime = millis() + flushtime;
     while (npkSer.available() || _flushtime >= millis())
     {
-        if (npkSer.available()) //read serial if any old data is available
+        if (npkSer.available()) // read serial if any old data is available
             npkSer.read();
         delay(1);
     }
